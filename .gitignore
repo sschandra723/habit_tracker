@@ -13,3 +13,7 @@ habit_frontend/build
 
 # OS files
 .DS_Store
+# IDE files
+.idea/
+.vscode/
+*.iml
