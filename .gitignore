@@ -1,0 +1,15 @@
+# Ignore all target folders anywhere
+target/
+
+# Frontend
+habit_frontendfrontend/node_modules
+habit_frontend/build
+
+# Env files
+.env
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
