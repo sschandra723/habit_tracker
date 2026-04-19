@@ -12,11 +12,18 @@ public class UserService {
     @Autowired
     private UserRepository userRepository;
 
-    // ✅ Get logged-in user's profile from JWT email
     public UserDTO getUserByEmail(String email) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
         return convertToDTO(user);
+    }
+
+    // ✅ Update display name
+    public UserDTO updateName(String email, String newName) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        user.setName(newName);
+        return convertToDTO(userRepository.save(user));
     }
 
     public UserDTO convertToDTO(User user) {

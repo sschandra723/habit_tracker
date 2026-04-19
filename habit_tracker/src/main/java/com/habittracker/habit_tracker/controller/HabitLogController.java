@@ -1,6 +1,5 @@
 package com.habittracker.habit_tracker.controller;
 
-import com.habittracker.habit_tracker.entity.HabitLog;
 import com.habittracker.habit_tracker.service.HabitLogService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -8,7 +7,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -16,51 +14,20 @@ import java.util.Map;
 @RequestMapping("/api/logs")
 public class HabitLogController {
 
-    @Autowired
-    private HabitLogService habitLogService;
+    @Autowired private HabitLogService habitLogService;
 
-    // POST /api/logs/{habitId}/mark  — mark today as done
+    // POST /api/logs/{habitId}/mark  — mark today as done (idempotent)
     @PostMapping("/{habitId}/mark")
-    public ResponseEntity<Map<String, String>> markHabit(@PathVariable Long habitId,
-                                                         Authentication auth) {
+    public ResponseEntity<Map<String, String>> markHabit(
+            @PathVariable Long habitId, Authentication auth) {
         String result = habitLogService.markHabit(habitId, auth.getName());
         return ResponseEntity.ok(Map.of("message", result));
     }
 
-    // DELETE /api/logs/{habitId}/mark  — undo today's mark
-    @DeleteMapping("/{habitId}/mark")
-    public ResponseEntity<Map<String, String>> unmarkHabit(@PathVariable Long habitId,
-                                                           Authentication auth) {
-        String result = habitLogService.unmarkHabit(habitId, auth.getName());
-        return ResponseEntity.ok(Map.of("message", result));
-    }
-
-    // GET /api/logs/{habitId}/logs
-    @GetMapping("/{habitId}/logs")
-    public ResponseEntity<List<HabitLog>> getLogs(@PathVariable Long habitId) {
-        return ResponseEntity.ok(habitLogService.getLogsByHabitId(habitId));
-    }
-    // GET /api/logs/{habitId}/streak
+    // ✅ GET /api/logs/{habitId}/streak  — streak + constellation (dynamically derived)
     @GetMapping("/{habitId}/streak")
-    public ResponseEntity<Map<String, Integer>> getStreak(@PathVariable Long habitId) {
-        return ResponseEntity.ok(Map.of("streak", habitLogService.getStreak(habitId)));
-    }
-
-    // GET /api/logs/{habitId}/weekly
-    @GetMapping("/{habitId}/weekly")
-    public ResponseEntity<Map<String, Integer>> getWeeklyProgress(@PathVariable Long habitId) {
-        Map<String, Integer> response = new HashMap<>();
-        response.put("totalDays", 7);
-        response.put("completedDays", habitLogService.getWeeklyCompletedDays(habitId));
-        return ResponseEntity.ok(response);
-    }
-
-    // GET /api/logs/{habitId}/monthly
-    @GetMapping("/{habitId}/monthly")
-    public ResponseEntity<Map<String, Integer>> getMonthlyProgress(@PathVariable Long habitId) {
-        Map<String, Integer> response = new HashMap<>();
-        response.put("completedDays", habitLogService.getMonthlyCompletedDays(habitId));
-        return ResponseEntity.ok(response);
+    public ResponseEntity<Map<String, Object>> getStreak(@PathVariable Long habitId) {
+        return ResponseEntity.ok(habitLogService.getStreakWithConstellation(habitId));
     }
 
     // GET /api/logs/{habitId}/longest-streak
@@ -69,15 +36,32 @@ public class HabitLogController {
         return ResponseEntity.ok(Map.of("Streak", habitLogService.getLongestStreak(habitId)));
     }
 
-    // GET /api/logs/{habitId}/calendar
+    // GET /api/logs/{habitId}/weekly
+    @GetMapping("/{habitId}/weekly")
+    public ResponseEntity<Map<String, Integer>> getWeekly(@PathVariable Long habitId) {
+        return ResponseEntity.ok(Map.of(
+                "totalDays", 7,
+                "completedDays", habitLogService.getWeeklyCompletedDays(habitId)
+        ));
+    }
+
+    // GET /api/logs/{habitId}/monthly
+    @GetMapping("/{habitId}/monthly")
+    public ResponseEntity<Map<String, Integer>> getMonthly(@PathVariable Long habitId) {
+        return ResponseEntity.ok(Map.of(
+                "completedDays", habitLogService.getMonthlyCompletedDays(habitId)
+        ));
+    }
+
+    // GET /api/logs/{habitId}/calendar  — all completed dates
     @GetMapping("/{habitId}/calendar")
     public ResponseEntity<List<LocalDate>> getCalendar(@PathVariable Long habitId) {
         return ResponseEntity.ok(habitLogService.getCalendarDates(habitId));
     }
-    @GetMapping("/{habitId}/progress-path")
-    public ResponseEntity<List<LocalDate>> getProgressPath(@PathVariable Long habitId) {
-        return ResponseEntity.ok(habitLogService.getProgressPath(habitId));
-    }
 
+    // GET /api/logs/{habitId}/weekly-data  — for analytics chart
+    @GetMapping("/{habitId}/weekly-data")
+    public ResponseEntity<List<Map<String, Object>>> getWeeklyData(@PathVariable Long habitId) {
+        return ResponseEntity.ok(habitLogService.getWeeklyData(habitId));
     }
-
+}
