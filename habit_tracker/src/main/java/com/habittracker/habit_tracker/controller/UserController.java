@@ -21,10 +21,6 @@ public class UserController {
     public ResponseEntity<UserDTO> getMyProfile(Authentication auth) {
         return ResponseEntity.ok(userService.getUserByEmail(auth.getName()));
     }
-    @GetMapping("/")
-    public String home() {
-        return "Backend is LIVE 🚀";
-    }
 
     // PATCH /api/users/me  body: { "name": "New Name" }
     @PatchMapping("/me")

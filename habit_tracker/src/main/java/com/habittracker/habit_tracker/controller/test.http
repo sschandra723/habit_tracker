@@ -1,1 +1,1 @@
-GET http://localhost:8080/api/logs/5/progress-path
+GET https://habit-tracker-qec3.onrender.com/api/logs/5/progress-path

@@ -1,12 +1,12 @@
 package com.habittracker.habit_tracker.controller;
 
+import com.habittracker.habit_tracker.dto.HabitAnalyticsDTO;
 import com.habittracker.habit_tracker.service.HabitLogService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 
@@ -16,27 +16,33 @@ public class HabitLogController {
 
     @Autowired private HabitLogService habitLogService;
 
-    // POST /api/logs/{habitId}/mark  — mark today as done (idempotent)
+    /** Mark today as done (idempotent). */
     @PostMapping("/{habitId}/mark")
     public ResponseEntity<Map<String, String>> markHabit(
             @PathVariable Long habitId, Authentication auth) {
-        String result = habitLogService.markHabit(habitId, auth.getName());
-        return ResponseEntity.ok(Map.of("message", result));
+        return ResponseEntity.ok(Map.of("message",
+                habitLogService.markHabit(habitId, auth.getName())));
     }
 
-    // ✅ GET /api/logs/{habitId}/streak  — streak + constellation (dynamically derived)
+    /** Current streak + constellation name. */
     @GetMapping("/{habitId}/streak")
     public ResponseEntity<Map<String, Object>> getStreak(@PathVariable Long habitId) {
         return ResponseEntity.ok(habitLogService.getStreakWithConstellation(habitId));
     }
 
-    // GET /api/logs/{habitId}/longest-streak
+    /** ✅ FIXED: Was missing — Dashboard calls this to show best streak badge. */
     @GetMapping("/{habitId}/longest-streak")
     public ResponseEntity<Map<String, Integer>> getLongestStreak(@PathVariable Long habitId) {
-        return ResponseEntity.ok(Map.of("Streak", habitLogService.getLongestStreak(habitId)));
+        return ResponseEntity.ok(Map.of("Streak", habitLogService.getBestStreak(habitId)));
     }
 
-    // GET /api/logs/{habitId}/weekly
+    /** Calendar — returns ISO date strings "YYYY-MM-DD". */
+    @GetMapping("/{habitId}/calendar")
+    public ResponseEntity<List<String>> getCalendar(@PathVariable Long habitId) {
+        return ResponseEntity.ok(habitLogService.getCalendarDatesAsStrings(habitId));
+    }
+
+    /** Weekly completed count for dashboard mini-bar. */
     @GetMapping("/{habitId}/weekly")
     public ResponseEntity<Map<String, Integer>> getWeekly(@PathVariable Long habitId) {
         return ResponseEntity.ok(Map.of(
@@ -45,23 +51,9 @@ public class HabitLogController {
         ));
     }
 
-    // GET /api/logs/{habitId}/monthly
-    @GetMapping("/{habitId}/monthly")
-    public ResponseEntity<Map<String, Integer>> getMonthly(@PathVariable Long habitId) {
-        return ResponseEntity.ok(Map.of(
-                "completedDays", habitLogService.getMonthlyCompletedDays(habitId)
-        ));
-    }
-
-    // GET /api/logs/{habitId}/calendar  — all completed dates
-    @GetMapping("/{habitId}/calendar")
-    public ResponseEntity<List<LocalDate>> getCalendar(@PathVariable Long habitId) {
-        return ResponseEntity.ok(habitLogService.getCalendarDates(habitId));
-    }
-
-    // GET /api/logs/{habitId}/weekly-data  — for analytics chart
-    @GetMapping("/{habitId}/weekly-data")
-    public ResponseEntity<List<Map<String, Object>>> getWeeklyData(@PathVariable Long habitId) {
-        return ResponseEntity.ok(habitLogService.getWeeklyData(habitId));
+    /** Full analytics DTO — single call, all data computed in backend. */
+    @GetMapping("/{habitId}/analytics")
+    public ResponseEntity<HabitAnalyticsDTO> getAnalytics(@PathVariable Long habitId) {
+        return ResponseEntity.ok(habitLogService.getAnalytics(habitId));
     }
 }
