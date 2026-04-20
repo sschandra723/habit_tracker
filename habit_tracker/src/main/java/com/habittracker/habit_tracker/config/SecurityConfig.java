@@ -25,7 +25,7 @@ public class SecurityConfig {
     private final JwtFilter jwtFilter;
 
     // ✅ Read from env var CORS_ORIGINS — supports Render + Vercel
-    @Value("${cors.allowed-origins:http://localhost:3000,http://localhost:5173,https://habit-tracker-qec3.onrender.com}")
+    @Value("${cors.allowed-origins:http://localhost:3000,http://localhost:5173,https://habit-tracker-qec3.onrender.com,https://habit-tracker-mu-dusky.vercel.app}")
     private String corsOriginsRaw;
 
     public SecurityConfig(JwtFilter jwtFilter) {
