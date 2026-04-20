@@ -356,6 +356,7 @@ export default function Dashboard() {
     }, []);
     const handleCelebrate = useCallback(c => setCelebration(c), []);
     const handleLogout    = () => { localStorage.removeItem("token"); window.location.href = "/"; };
+    // eslint-disable-next-line no-unused-vars
     const handleAdd    = h  => setHabits(p => [...p, h]);
     const handleDelete = id => setHabits(p => p.filter(h => h.id !== id));
     const handleUpdate = u  => setHabits(p => p.map(h => h.id === u.id ? u : h));

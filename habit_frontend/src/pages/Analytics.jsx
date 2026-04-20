@@ -98,7 +98,7 @@ function HabitAnalyticsCard({ habitId, habitName }) {
                     style={{ fontSize: 10, color: "#6366f1", background: "transparent", border: "1px solid #6366f1", borderRadius: 5, padding: "3px 10px", cursor: "pointer" }}>Retry</button>
         </div>
     );
-
+    // eslint-disable-next-line no-unused-vars
     const hasGoalConstellation = CONSTELLATIONS.find(x => x.name === data.constellation);
 
     return (
@@ -168,7 +168,6 @@ function HabitAnalyticsCard({ habitId, habitName }) {
         </div>
     );
 }
-
 function StatPill({ label, value, color }) {
     return (
         <div style={{ background: "#040d1a", border: "1px solid #0f1a2e", borderRadius: 8, padding: "5px 11px" }}>
