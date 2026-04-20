@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { CONSTELLATIONS } from "./constellations";
 
-const API = process.env.REACT_APP_API_URL || "http://localhost:8080";
+const API = process.env.REACT_APP_API_URL;
 function getToken() { return localStorage.getItem("token"); }
 
 async function apiFetch(path) {

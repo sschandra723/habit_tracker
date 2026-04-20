@@ -7,8 +7,7 @@ export function AuthProvider({ children }) {
     const [user, setUser]     = useState(null);
     const [loading, setLoading] = useState(true);
 
-    const API = process.env.REACT_APP_API_URL || "http://localhost:8080";
-
+    const API = process.env.REACT_APP_API_URL ;
     useEffect(() => {
         if (!token) { setLoading(false); return; }
         // Validate token by fetching user profile

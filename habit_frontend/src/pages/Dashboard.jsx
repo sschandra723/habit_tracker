@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback, useRef } from "react";
 import { CONSTELLATIONS } from "./constellations";
 
-const API = process.env.REACT_APP_API_URL || "http://localhost:8080";
+const API = process.env.REACT_APP_API_URL ;
 function getToken() { return localStorage.getItem("token"); }
 function getTodayKey(habitId) { return `marked_${habitId}_${new Date().toISOString().split("T")[0]}`; }
 function wasMarkedToday(habitId) { return localStorage.getItem(getTodayKey(habitId)) === "1"; }
