@@ -47,6 +47,8 @@ const styles = `
     display: flex;
     align-items: center;
     gap: 8px;
+    cursor: pointer;
+    text-decoration: none;
   }
 
   .auth-logo-dot {
@@ -93,14 +95,9 @@ const styles = `
     color: #64748b;
   }
 
-  .auth-tab.active {
-    background: #4ade80;
-    color: #04080f;
-  }
+  .auth-tab.active { background: #4ade80; color: #04080f; }
 
-  .auth-field {
-    margin-bottom: 14px;
-  }
+  .auth-field { margin-bottom: 14px; }
 
   .auth-label {
     font-size: 12px;
@@ -161,61 +158,55 @@ const styles = `
   }
 
   .auth-btn:hover { opacity: 0.9; transform: translateY(-1px); }
+  .auth-btn:active { transform: scale(0.97); }
   .auth-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
 
-  .auth-strength {
-    display: flex;
-    gap: 4px;
-    margin-top: 6px;
+  .auth-back {
+    font-size: 12px; color: #334155; margin-top: 20px;
+    text-align: center; cursor: pointer; transition: color 0.15s;
   }
+  .auth-back:hover { color: #4ade80; }
+  .auth-back a { color: inherit; text-decoration: none; }
 
-  .auth-strength-bar {
-    flex: 1; height: 3px; border-radius: 2px;
-    background: #1e293b;
-    transition: background 0.3s;
-  }
+  .auth-strength { display: flex; gap: 4px; margin-top: 6px; }
+  .auth-strength-bar { flex: 1; height: 3px; border-radius: 2px; background: #1e293b; transition: background 0.3s; }
 `;
 
 function getPasswordStrength(pw) {
     if (!pw) return 0;
     let s = 0;
-    if (pw.length >= 6) s++;
-    if (pw.length >= 10) s++;
-    if (/[A-Z]/.test(pw)) s++;
-    if (/[0-9]/.test(pw)) s++;
-    if (/[^A-Za-z0-9]/.test(pw)) s++;
+    if (pw.length >= 6)          s++;
+    if (pw.length >= 10)         s++;
+    if (/[A-Z]/.test(pw))       s++;
+    if (/[0-9]/.test(pw))       s++;
+    if (/[^A-Za-z0-9]/.test(pw))s++;
     return s;
 }
 
-const strengthColors = ["#f87171", "#fb923c", "#fbbf24", "#4ade80", "#22c55e"];
-const strengthLabels = ["", "Weak", "Fair", "Good", "Strong", "Very Strong"];
+const strengthColors = ["#f87171","#fb923c","#fbbf24","#4ade80","#22c55e"];
+const strengthLabels = ["","Weak","Fair","Good","Strong","Very Strong"];
 
 export default function Auth() {
-    const [tab, setTab] = useState("login"); // "login" | "signup"
-    const [loading, setLoading] = useState(false);
+    // Read ?tab=signup from the URL (set by landing page CTA)
+    const initialTab = new URLSearchParams(window.location.search).get("tab") === "signup" ? "signup" : "login";
+    const [tab, setTab]               = useState(initialTab);
+    const [loading, setLoading]       = useState(false);
     const [serverError, setServerError] = useState("");
 
-    // Login state
-    const [loginEmail, setLoginEmail] = useState("");
+    const [loginEmail, setLoginEmail]       = useState("");
     const [loginPassword, setLoginPassword] = useState("");
-    const [loginErrors, setLoginErrors] = useState({});
+    const [loginErrors, setLoginErrors]     = useState({});
 
-    // Signup state
-    const [signupName, setSignupName] = useState("");
-    const [signupEmail, setSignupEmail] = useState("");
+    const [signupName, setSignupName]         = useState("");
+    const [signupEmail, setSignupEmail]       = useState("");
     const [signupPassword, setSignupPassword] = useState("");
-    const [signupConfirm, setSignupConfirm] = useState("");
-    const [signupErrors, setSignupErrors] = useState({});
+    const [signupConfirm, setSignupConfirm]   = useState("");
+    const [signupErrors, setSignupErrors]     = useState({});
 
     const pwStrength = getPasswordStrength(signupPassword);
 
-    useEffect(() => {
-        setServerError("");
-        setLoginErrors({});
-        setSignupErrors({});
-    }, [tab]);
+    useEffect(() => { setServerError(""); setLoginErrors({}); setSignupErrors({}); }, [tab]);
 
-    // ── Login validation ──
     const validateLogin = () => {
         const e = {};
         if (!loginEmail.trim()) e.email = "Email is required";
@@ -228,14 +219,9 @@ export default function Auth() {
     const handleLogin = async (ev) => {
         ev.preventDefault();
         if (!validateLogin()) return;
-        setLoading(true);
-        setServerError("");
+        setLoading(true); setServerError("");
         try {
-            const res = await fetch(`${API}/api/auth/login`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ email: loginEmail, password: loginPassword }),
-            });
+            const res  = await fetch(`${API}/api/auth/login`, { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ email: loginEmail, password: loginPassword }) });
             const data = await res.json();
             if (res.ok) {
                 localStorage.setItem("token", data.accessToken);
@@ -249,13 +235,12 @@ export default function Auth() {
         setLoading(false);
     };
 
-    // ── Signup validation ──
     const validateSignup = () => {
         const e = {};
-        if (!signupName.trim()) e.name = "Name is required";
-        if (!signupEmail.trim()) e.email = "Email is required";
+        if (!signupName.trim())   e.name    = "Name is required";
+        if (!signupEmail.trim())  e.email   = "Email is required";
         else if (!/\S+@\S+\.\S+/.test(signupEmail)) e.email = "Invalid email";
-        if (!signupPassword) e.password = "Password is required";
+        if (!signupPassword)      e.password = "Password is required";
         else if (signupPassword.length < 6) e.password = "Minimum 6 characters";
         if (signupPassword !== signupConfirm) e.confirm = "Passwords do not match";
         setSignupErrors(e);
@@ -265,26 +250,15 @@ export default function Auth() {
     const handleSignup = async (ev) => {
         ev.preventDefault();
         if (!validateSignup()) return;
-        setLoading(true);
-        setServerError("");
+        setLoading(true); setServerError("");
         try {
-            const res = await fetch(`${API}/api/auth/signup`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ name: signupName, email: signupEmail, password: signupPassword }),
-            });
+            const res  = await fetch(`${API}/api/auth/signup`, { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ name: signupName, email: signupEmail, password: signupPassword }) });
             const data = await res.json();
             if (res.ok) {
-                // Auto-login after signup
-                const loginRes = await fetch(`${API}/api/auth/login`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ email: signupEmail, password: signupPassword }),
-                });
+                const loginRes  = await fetch(`${API}/api/auth/login`, { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ email: signupEmail, password: signupPassword }) });
                 const loginData = await loginRes.json();
                 if (loginRes.ok) {
                     localStorage.setItem("token", loginData.accessToken);
-                    // Go to habit selection page
                     window.location.href = "/select-habits";
                 }
             } else {
@@ -300,15 +274,15 @@ export default function Auth() {
         <>
             <style>{styles}</style>
             <div className="auth-root">
-                {/* Background orbs */}
-                <div className="auth-bg-orb" style={{ width: 400, height: 400, background: "rgba(74,222,128,0.06)", top: -100, left: -100 }} />
-                <div className="auth-bg-orb" style={{ width: 300, height: 300, background: "rgba(99,102,241,0.06)", bottom: -80, right: -80 }} />
+                <div className="auth-bg-orb" style={{ width:400, height:400, background:"rgba(74,222,128,0.06)", top:-100, left:-100 }} />
+                <div className="auth-bg-orb" style={{ width:300, height:300, background:"rgba(99,102,241,0.06)", bottom:-80, right:-80 }} />
 
                 <div className="auth-card">
-                    <div className="auth-logo">
+                    {/* Back to landing */}
+                    <a href="/" className="auth-logo">
                         <div className="auth-logo-dot" />
                         HabitTracker
-                    </div>
+                    </a>
 
                     <h1 className="auth-title">
                         {tab === "login" ? "Welcome back." : "Start your journey."}
@@ -317,68 +291,55 @@ export default function Auth() {
                         {tab === "login" ? "Sign in to track your habits." : "Create an account to get started."}
                     </p>
 
-                    {/* Tabs */}
                     <div className="auth-tabs">
-                        <button className={`auth-tab ${tab === "login" ? "active" : ""}`} onClick={() => setTab("login")}>Login</button>
-                        <button className={`auth-tab ${tab === "signup" ? "active" : ""}`} onClick={() => setTab("signup")}>Sign Up</button>
+                        <button className={`auth-tab${tab==="login"?" active":""}`} onClick={()=>setTab("login")}>Login</button>
+                        <button className={`auth-tab${tab==="signup"?" active":""}`} onClick={()=>setTab("signup")}>Sign Up</button>
                     </div>
 
                     {serverError && <div className="auth-server-error">{serverError}</div>}
 
-                    {/* LOGIN FORM */}
                     {tab === "login" && (
                         <form onSubmit={handleLogin} noValidate>
                             <div className="auth-field">
                                 <label className="auth-label">Email</label>
-                                <input className={`auth-input ${loginErrors.email ? "error" : ""}`}
-                                       type="email" placeholder="you@example.com"
-                                       value={loginEmail} onChange={e => setLoginEmail(e.target.value)} />
+                                <input className={`auth-input${loginErrors.email?" error":""}`} type="email" placeholder="you@example.com" value={loginEmail} onChange={e=>setLoginEmail(e.target.value)} />
                                 {loginErrors.email && <div className="auth-error">{loginErrors.email}</div>}
                             </div>
                             <div className="auth-field">
                                 <label className="auth-label">Password</label>
-                                <input className={`auth-input ${loginErrors.password ? "error" : ""}`}
-                                       type="password" placeholder="••••••••"
-                                       value={loginPassword} onChange={e => setLoginPassword(e.target.value)} />
+                                <input className={`auth-input${loginErrors.password?" error":""}`} type="password" placeholder="••••••••" value={loginPassword} onChange={e=>setLoginPassword(e.target.value)} />
                                 {loginErrors.password && <div className="auth-error">{loginErrors.password}</div>}
                             </div>
                             <button className="auth-btn" type="submit" disabled={loading}>
-                                {loading ? "Signing in..." : "Sign In →"}
+                                {loading ? "Signing in…" : "Sign In →"}
                             </button>
                         </form>
                     )}
 
-                    {/* SIGNUP FORM */}
                     {tab === "signup" && (
                         <form onSubmit={handleSignup} noValidate>
                             <div className="auth-field">
                                 <label className="auth-label">Full Name</label>
-                                <input className={`auth-input ${signupErrors.name ? "error" : ""}`}
-                                       type="text" placeholder="John Doe"
-                                       value={signupName} onChange={e => setSignupName(e.target.value)} />
+                                <input className={`auth-input${signupErrors.name?" error":""}`} type="text" placeholder="John Doe" value={signupName} onChange={e=>setSignupName(e.target.value)} />
                                 {signupErrors.name && <div className="auth-error">{signupErrors.name}</div>}
                             </div>
                             <div className="auth-field">
                                 <label className="auth-label">Email</label>
-                                <input className={`auth-input ${signupErrors.email ? "error" : ""}`}
-                                       type="email" placeholder="you@example.com"
-                                       value={signupEmail} onChange={e => setSignupEmail(e.target.value)} />
+                                <input className={`auth-input${signupErrors.email?" error":""}`} type="email" placeholder="you@example.com" value={signupEmail} onChange={e=>setSignupEmail(e.target.value)} />
                                 {signupErrors.email && <div className="auth-error">{signupErrors.email}</div>}
                             </div>
                             <div className="auth-field">
                                 <label className="auth-label">Password</label>
-                                <input className={`auth-input ${signupErrors.password ? "error" : ""}`}
-                                       type="password" placeholder="Min. 6 characters"
-                                       value={signupPassword} onChange={e => setSignupPassword(e.target.value)} />
+                                <input className={`auth-input${signupErrors.password?" error":""}`} type="password" placeholder="Min. 6 characters" value={signupPassword} onChange={e=>setSignupPassword(e.target.value)} />
                                 {signupPassword && (
                                     <>
                                         <div className="auth-strength">
                                             {[1,2,3,4,5].map(i => (
                                                 <div key={i} className="auth-strength-bar"
-                                                     style={{ background: i <= pwStrength ? strengthColors[pwStrength - 1] : undefined }} />
+                                                     style={{ background: i <= pwStrength ? strengthColors[pwStrength-1] : undefined }} />
                                             ))}
                                         </div>
-                                        <div style={{ fontSize: 11, color: strengthColors[pwStrength - 1], marginTop: 3 }}>
+                                        <div style={{ fontSize:11, color:strengthColors[pwStrength-1], marginTop:3 }}>
                                             {strengthLabels[pwStrength]}
                                         </div>
                                     </>
@@ -387,16 +348,18 @@ export default function Auth() {
                             </div>
                             <div className="auth-field">
                                 <label className="auth-label">Confirm Password</label>
-                                <input className={`auth-input ${signupErrors.confirm ? "error" : ""}`}
-                                       type="password" placeholder="Re-enter password"
-                                       value={signupConfirm} onChange={e => setSignupConfirm(e.target.value)} />
+                                <input className={`auth-input${signupErrors.confirm?" error":""}`} type="password" placeholder="Re-enter password" value={signupConfirm} onChange={e=>setSignupConfirm(e.target.value)} />
                                 {signupErrors.confirm && <div className="auth-error">{signupErrors.confirm}</div>}
                             </div>
                             <button className="auth-btn" type="submit" disabled={loading}>
-                                {loading ? "Creating account..." : "Create Account →"}
+                                {loading ? "Creating account…" : "Create Account →"}
                             </button>
                         </form>
                     )}
+
+                    <div className="auth-back">
+                        <a href="/">← Back to home</a>
+                    </div>
                 </div>
             </div>
         </>
