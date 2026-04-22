@@ -16,27 +16,23 @@ public class HabitLog {
     private boolean completed;
 
     @ManyToOne
-    @JoinColumn(name = "habit_id")
+    @JoinColumn(name = "habit_id",
+            foreignKey = @ForeignKey(name = "fk_habit_logs_habit"))
     private Habit habit;
 
-    // Constructors
     public HabitLog() {}
 
     public HabitLog(LocalDate date, boolean completed, Habit habit) {
-        this.date = date;
+        this.date      = date;
         this.completed = completed;
-        this.habit = habit;
+        this.habit     = habit;
     }
 
-    // Getters & Setters
-    public Long getId() { return id; }
-
-    public LocalDate getDate() { return date; }
-    public void setDate(LocalDate date) { this.date = date; }
-
-    public boolean isCompleted() { return completed; }
-    public void setCompleted(boolean completed) { this.completed = completed; }
-
-    public Habit getHabit() { return habit; }
-    public void setHabit(Habit habit) { this.habit = habit; }
+    public Long      getId()                         { return id; }
+    public LocalDate getDate()                       { return date; }
+    public void      setDate(LocalDate date)         { this.date = date; }
+    public boolean   isCompleted()                   { return completed; }
+    public void      setCompleted(boolean completed) { this.completed = completed; }
+    public Habit     getHabit()                      { return habit; }
+    public void      setHabit(Habit habit)           { this.habit = habit; }
 }

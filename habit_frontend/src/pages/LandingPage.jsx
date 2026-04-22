@@ -516,7 +516,7 @@ export default function LandingPage() {
                 <div className="orb" style={{ width:500, height:500, background:"rgba(99,102,241,0.06)", top:"50%", left:"50%", transform:"translate(-50%,-50%)" }} />
                 <div style={{ position:"relative", zIndex:1 }}>
                     <div className="lp-section-label" style={{ textAlign:"center", marginBottom:16 }}>Get started today</div>
-                    <h2 className="lp-cta-title">Your streak starts<br />tonight</h2>
+                    <h2 className="lp-cta-title">Your streak starts<br />Today</h2>
                     <p className="lp-cta-sub">Join for free. Pick your first habit. Mark it done. Watch a star light up.</p>
                     <div style={{ display:"flex", gap:14, justifyContent:"center", flexWrap:"wrap" }}>
                         <a href="/auth?tab=signup" className="btn-primary" style={{ fontSize:15, padding:"14px 32px" }}>✦ Start for free</a>

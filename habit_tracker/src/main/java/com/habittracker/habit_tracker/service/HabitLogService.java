@@ -7,6 +7,7 @@ import com.habittracker.habit_tracker.repository.HabitLogRepository;
 import com.habittracker.habit_tracker.repository.HabitRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -18,14 +19,12 @@ public class HabitLogService {
     @Autowired private HabitLogRepository habitLogRepository;
     @Autowired private HabitRepository    habitRepository;
 
-    // ─── Milestone table (shared by service + controller) ─────────────────────
-    private static final int[]   MILESTONE_DAYS  = {3,7,10,14,21,30,45,60,90,120,150};
+    private static final int[]    MILESTONE_DAYS  = {3,7,10,14,21,30,45,60,90,120,150};
     private static final String[] MILESTONE_NAMES = {
             "Triangulum","Crux","Aries","Lyra","Cassiopeia",
             "Orion","Scorpius","Hercules","Perseus","Andromeda","Ophiuchus"
     };
 
-    /** Current constellation name for a given streak (or null if below first milestone). */
     public static String constellationForStreak(int streak) {
         String result = null;
         for (int i = 0; i < MILESTONE_DAYS.length; i++) {
@@ -35,17 +34,8 @@ public class HabitLogService {
         return result;
     }
 
-    /** Next milestone entry {days, name} or null if max reached. */
-    private static int[] nextMilestone(int streak) {
-        for (int i = 0; i < MILESTONE_DAYS.length; i++) {
-            if (streak < MILESTONE_DAYS[i]) {
-                return new int[]{ MILESTONE_DAYS[i], i };
-            }
-        }
-        return null;
-    }
-
-    // ─── Mark today idempotent ────────────────────────────────────────────────
+    // ── Mark today (idempotent) ───────────────────────────────────────────────
+    @Transactional
     public String markHabit(Long habitId, String email) {
         Habit habit = habitRepository.findById(habitId)
                 .orElseThrow(() -> new RuntimeException("Habit not found"));
@@ -64,60 +54,52 @@ public class HabitLogService {
         return "Habit marked!";
     }
 
-    // ─── Current streak ───────────────────────────────────────────────────────
+    // ── Current streak ────────────────────────────────────────────────────────
+    @Transactional(readOnly = true)
     public int getStreak(Long habitId) {
         List<HabitLog> logs = habitLogRepository.findByHabit_IdOrderByDateDesc(habitId);
         int streak = 0;
         LocalDate expected = LocalDate.now();
         for (HabitLog log : logs) {
-            if (log.getDate().equals(expected)) {
-                streak++;
-                expected = expected.minusDays(1);
-            } else {
-                break;
-            }
+            if (log.getDate().equals(expected)) { streak++; expected = expected.minusDays(1); }
+            else break;
         }
         return streak;
     }
 
-    // ─── Best (longest ever) streak ───────────────────────────────────────────
+    // ── Best streak ───────────────────────────────────────────────────────────
+    @Transactional(readOnly = true)
     public int getBestStreak(Long habitId) {
         List<HabitLog> logs = habitLogRepository.findByHabit_IdOrderByDateDesc(habitId);
         if (logs.isEmpty()) return 0;
         int longest = 1, current = 1;
         for (int i = 1; i < logs.size(); i++) {
-            if (logs.get(i - 1).getDate().minusDays(1).equals(logs.get(i).getDate())) {
-                current++;
-                longest = Math.max(longest, current);
-            } else {
-                current = 1;
-            }
+            if (logs.get(i-1).getDate().minusDays(1).equals(logs.get(i).getDate())) {
+                current++; longest = Math.max(longest, current);
+            } else { current = 1; }
         }
         return longest;
     }
 
-    // ─── Calendar: return ISO date strings — NO LocalDate arrays ─────────────
-    // Jackson would serialize LocalDate as [2026,4,19] without write-dates-as-timestamps=false
-    // Returning String avoids any serialization ambiguity.
+    // ── Calendar: ISO date strings ────────────────────────────────────────────
+    @Transactional(readOnly = true)
     public List<String> getCalendarDatesAsStrings(Long habitId) {
-        DateTimeFormatter fmt = DateTimeFormatter.ISO_LOCAL_DATE;
         return habitLogRepository.findByHabit_IdOrderByDateDesc(habitId)
                 .stream()
-                .map(log -> log.getDate().format(fmt))
+                .map(log -> log.getDate().format(DateTimeFormatter.ISO_LOCAL_DATE))
                 .toList();
     }
 
-    // ─── Full analytics DTO (single endpoint, zero frontend logic) ────────────
+    // ── Full analytics DTO ────────────────────────────────────────────────────
+    @Transactional(readOnly = true)
     public HabitAnalyticsDTO getAnalytics(Long habitId) {
         Habit habit = habitRepository.findById(habitId)
                 .orElseThrow(() -> new RuntimeException("Habit not found"));
 
-        LocalDate today = LocalDate.now();
-
-        // All logs, descending
+        LocalDate today  = LocalDate.now();
+        DateTimeFormatter fmt = DateTimeFormatter.ISO_LOCAL_DATE;
         List<HabitLog> allLogs = habitLogRepository.findByHabit_IdOrderByDateDesc(habitId);
         Set<String> doneDates = new HashSet<>();
-        DateTimeFormatter fmt = DateTimeFormatter.ISO_LOCAL_DATE;
         allLogs.forEach(l -> doneDates.add(l.getDate().format(fmt)));
 
         // Current streak
@@ -129,38 +111,31 @@ public class HabitLogService {
         }
 
         // Best streak
-        int best = allLogs.isEmpty() ? 0 : 1;
-        int cur  = 1;
+        int best = allLogs.isEmpty() ? 0 : 1, cur = 1;
         for (int i = 1; i < allLogs.size(); i++) {
-            if (allLogs.get(i - 1).getDate().minusDays(1).equals(allLogs.get(i).getDate())) {
+            if (allLogs.get(i-1).getDate().minusDays(1).equals(allLogs.get(i).getDate())) {
                 cur++; best = Math.max(best, cur);
             } else { cur = 1; }
         }
 
-        // Weekly data — last 7 days oldest-first
+        // Weekly data (last 7 days, oldest first)
         List<HabitAnalyticsDTO.DayData> weeklyData = new ArrayList<>();
         int completedThisWeek = 0;
         for (int i = 6; i >= 0; i--) {
             LocalDate date = today.minusDays(i);
             boolean done = doneDates.contains(date.format(fmt));
             if (done) completedThisWeek++;
-            String dayLabel = date.getDayOfWeek().toString().substring(0, 3);
-            weeklyData.add(new HabitAnalyticsDTO.DayData(date.format(fmt), dayLabel, done));
+            weeklyData.add(new HabitAnalyticsDTO.DayData(
+                    date.format(fmt),
+                    date.getDayOfWeek().toString().substring(0, 3),
+                    done));
         }
 
-        int weeklyPct = Math.round((completedThisWeek / 7.0f) * 100);
-
-        // Constellation
-        String constellationName = constellationForStreak(streak);
-
         // Next milestone
-        int nextDays = 0;
-        String nextName = null;
+        int nextDays = 0; String nextName = null;
         for (int i = 0; i < MILESTONE_DAYS.length; i++) {
             if (streak < MILESTONE_DAYS[i]) {
-                nextDays = MILESTONE_DAYS[i];
-                nextName = MILESTONE_NAMES[i];
-                break;
+                nextDays = MILESTONE_DAYS[i]; nextName = MILESTONE_NAMES[i]; break;
             }
         }
 
@@ -171,25 +146,27 @@ public class HabitLogService {
         dto.setCurrentStreak(streak);
         dto.setBestStreak(best);
         dto.setCompletedThisWeek(completedThisWeek);
-        dto.setWeeklyPercentage(weeklyPct);
+        dto.setWeeklyPercentage(Math.round((completedThisWeek / 7.0f) * 100));
         dto.setWeeklyData(weeklyData);
-        dto.setConstellation(constellationName);
+        dto.setConstellation(constellationForStreak(streak));
         dto.setNextMilestoneDays(nextDays);
         dto.setNextMilestoneName(nextName);
         return dto;
     }
 
-    // ─── Streak + constellation (kept for dashboard card) ────────────────────
+    // ── Streak + constellation for dashboard card ─────────────────────────────
+    @Transactional(readOnly = true)
     public Map<String, Object> getStreakWithConstellation(Long habitId) {
         int streak = getStreak(habitId);
         Map<String, Object> result = new HashMap<>();
         result.put("habitId", habitId);
-        result.put("streak", streak);
+        result.put("streak",  streak);
         result.put("constellation", constellationForStreak(streak));
         return result;
     }
 
-    // ─── Weekly count (kept for dashboard card) ───────────────────────────────
+    // ── Weekly count for dashboard card ──────────────────────────────────────
+    @Transactional(readOnly = true)
     public int getWeeklyCompletedDays(Long habitId) {
         LocalDate today = LocalDate.now();
         return habitLogRepository.findByHabit_IdAndDateBetween(

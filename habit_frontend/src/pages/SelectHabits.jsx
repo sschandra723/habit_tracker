@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 
-const API = process.env.REACT_APP_API_URL;
+const API = process.env.REACT_APP_API_URL || "http://localhost:8080";
 function getToken() { return localStorage.getItem("token"); }
 
 const HABIT_CATEGORIES = [
@@ -60,48 +60,112 @@ const HABIT_CATEGORIES = [
     {
         label: "🤝 SOCIAL & PRODUCTIVITY",
         habits: [
-            { name: "No Social Media",      description: "Avoid social media today",          icon: "🚫" },
+            { name: "No Social Media",      description: "Avoid social media today",           icon: "🚫" },
             { name: "Call Family / Friend", description: "Check in with someone you care about",icon: "📞" },
-            { name: "Plan the Day",         description: "Write a to-do list",               icon: "📋" },
-            { name: "Clean Room",           description: "Tidy up your space",               icon: "🧹" },
-            { name: "Budget Review",        description: "Review your daily spending",        icon: "💰" },
-            { name: "Gratitude Practice",   description: "Write 3 things you're grateful for",icon: "🙏" },
+            { name: "Plan the Day",         description: "Write a to-do list",                icon: "📋" },
+            { name: "Clean Room",           description: "Tidy up your space",                icon: "🧹" },
+            { name: "Budget Review",        description: "Review your daily spending",         icon: "💰" },
+            { name: "Gratitude Practice",   description: "Write 3 things you're grateful for", icon: "🙏" },
         ],
     },
 ];
 
-const css = `
+const CSS = `
 @import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600&display=swap');
-*{box-sizing:border-box;margin:0;padding:0;}
-body{background:#04080f;color:#f1f5f9;font-family:'DM Sans',sans-serif;}
-@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
-.hs-chip{display:flex;align-items:center;gap:8px;padding:9px 15px;border-radius:10px;border:1.5px solid #1a2540;background:#060d1a;cursor:pointer;font-size:13px;font-weight:500;color:#94a3b8;transition:all 0.18s;user-select:none;white-space:nowrap;}
-.hs-chip:hover{border-color:#4ade80;color:#f1f5f9;background:rgba(74,222,128,0.05);}
-.hs-chip.sel{border-color:#4ade80;background:rgba(74,222,128,0.1);color:#4ade80;font-weight:600;}
-.hs-chip .icon{font-size:16px;line-height:1;}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: #04080f; color: #f1f5f9; font-family: 'DM Sans', sans-serif; }
+
+@keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+
+/* ── Habit chip ── */
+.hs-chip {
+  display: flex; align-items: center; gap: 7px;
+  padding: 10px 14px; border-radius: 10px;
+  border: 1.5px solid #1a2540; background: #060d1a;
+  cursor: pointer; font-size: 13px; font-weight: 500;
+  color: #94a3b8; transition: all 0.18s; user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  min-height: 44px; /* touch target */
+}
+.hs-chip:hover  { border-color: #4ade80; color: #f1f5f9; background: rgba(74,222,128,0.05); }
+.hs-chip:active { transform: scale(0.96); }
+.hs-chip.sel    { border-color: #4ade80; background: rgba(74,222,128,0.1); color: #4ade80; font-weight: 600; }
+.hs-chip .icon  { font-size: 16px; line-height: 1; flex-shrink: 0; }
+
+/* ── Save button ── */
+.hs-save {
+  border: none; border-radius: 12px;
+  font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 800;
+  transition: all 0.25s; cursor: pointer;
+  min-height: 50px; padding: 0 32px;
+  -webkit-tap-highlight-color: transparent;
+}
+.hs-save:active { transform: scale(0.97); }
+.hs-save:disabled { cursor: not-allowed; }
+
+/* ── Header ── */
+.hs-header {
+  padding: 24px 16px 0;
+  max-width: 860px; margin: 0 auto;
+}
+@media(min-width: 640px) { .hs-header { padding: 28px 32px 0; } }
+
+/* ── Categories wrapper ── */
+.hs-body {
+  max-width: 860px; margin: 0 auto;
+  padding: 0 16px;
+}
+@media(min-width: 640px) { .hs-body { padding: 0 32px; } }
+
+/* ── Title ── */
+.hs-title {
+  font-family: 'Syne', sans-serif;
+  font-size: clamp(24px, 6vw, 34px);
+  font-weight: 800; color: #f8fafc; line-height: 1.15; margin-bottom: 8px;
+}
+
+/* ── Fixed footer ── */
+.hs-footer {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  background: rgba(4,8,15,0.97);
+  backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+  border-top: 1px solid #0a1120;
+  padding: 14px 16px;
+  display: flex; align-items: center; justify-content: center;
+  flex-wrap: wrap; gap: 12px; z-index: 20;
+}
+@media(min-width: 640px) { .hs-footer { padding: 16px 32px; gap: 16px; } }
+
+/* ── Category section ── */
+.hs-cat { margin-bottom: 28px; animation: fadeIn 0.4s ease; }
+.hs-cat-label {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.12em;
+  color: #334155; margin-bottom: 11px; padding-bottom: 8px;
+  border-bottom: 1px solid #0a1120; text-transform: uppercase;
+}
+.hs-chips {
+  display: flex; flex-wrap: wrap; gap: 8px;
+}
 `;
 
-// Determine mode from URL param: ?mode=add means coming from dashboard Add button
 function getMode() {
     return new URLSearchParams(window.location.search).get("mode") || "signup";
 }
 
 export default function SelectHabits() {
-    const [selected, setSelected] = useState(new Set());
-    const [saving, setSaving]     = useState(false);
-    const [error, setError]       = useState("");
-    const mode = getMode(); // "signup" or "add"
-
-    // Pre-fetch existing habits so we don't show already-added ones in "add" mode
+    const [selected, setSelected]         = useState(new Set());
+    const [saving, setSaving]             = useState(false);
+    const [error, setError]               = useState("");
     const [existingNames, setExistingNames] = useState(new Set());
+    const mode = getMode();
+
     useEffect(() => {
         if (mode === "add") {
             fetch(`${API}/api/habits`, {
                 headers: { Authorization: "Bearer " + getToken() },
             }).then(r => r.json()).then(habits => {
-                if (Array.isArray(habits)) {
+                if (Array.isArray(habits))
                     setExistingNames(new Set(habits.map(h => h.name)));
-                }
             }).catch(() => {});
         }
     }, [mode]);
@@ -119,7 +183,7 @@ export default function SelectHabits() {
 
     const handleSave = async () => {
         if (selected.size === 0) {
-            setError("Please select at least one habit to continue.");
+            setError("Please select at least one habit.");
             return;
         }
         setSaving(true);
@@ -142,48 +206,49 @@ export default function SelectHabits() {
         }
     };
 
-    const handleSkip = () => { window.location.href = "/dashboard"; };
-
-    const pageTitle  = mode === "add" ? "Add more habits." : "Choose your habits.";
+    const pageTitle    = mode === "add" ? "Add more habits." : "Choose your habits.";
     const pageSubtitle = mode === "add"
         ? "Pick habits to add to your dashboard."
         : "Pick the habits you want to build. You can always add more later.";
-    const saveLabel  = mode === "add"
+    const saveLabel    = mode === "add"
         ? (saving ? "Adding…" : `Add ${selected.size || ""} Habit${selected.size !== 1 ? "s" : ""} →`)
         : (saving ? "Saving…" : "Save & Continue →");
 
     return (
         <>
-            <style>{css}</style>
+            <style>{CSS}</style>
             <div style={{ minHeight: "100vh", background: "#04080f", paddingBottom: 100 }}>
+
                 {/* Header */}
-                <div style={{ padding: "28px 40px 0", maxWidth: 860, margin: "0 auto" }}>
-                    <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", color: "#4ade80", marginBottom: 24, display: "flex", alignItems: "center", gap: 7 }}>
-                        <div style={{ width: 7, height: 7, borderRadius: "50%", background: "#4ade80", boxShadow: "0 0 8px #4ade80" }} />
+                <div className="hs-header">
+                    <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", color: "#4ade80", marginBottom: 20, display: "flex", alignItems: "center", gap: 7 }}>
+                        <div style={{ width: 7, height: 7, borderRadius: "50%", background: "#4ade80", boxShadow: "0 0 8px #4ade80", flexShrink: 0 }} />
                         HABITTRACKER
                     </div>
-                    <h1 style={{ fontFamily: "'Syne',sans-serif", fontSize: 34, fontWeight: 800, color: "#f8fafc", lineHeight: 1.15, marginBottom: 8 }}>{pageTitle}</h1>
-                    <p style={{ fontSize: 14, color: "#475569", marginBottom: 32 }}>{pageSubtitle}</p>
+                    <h1 className="hs-title">{pageTitle}</h1>
+                    <p style={{ fontSize: 14, color: "#475569", marginBottom: 28, lineHeight: 1.6 }}>{pageSubtitle}</p>
                 </div>
 
                 {/* Categories */}
-                <div style={{ maxWidth: 860, margin: "0 auto", padding: "0 40px" }}>
+                <div className="hs-body">
                     {HABIT_CATEGORIES.map(cat => {
-                        // In "add" mode, filter out already-existing habits
                         const visibleHabits = mode === "add"
                             ? cat.habits.filter(h => !existingNames.has(h.name))
                             : cat.habits;
                         if (visibleHabits.length === 0) return null;
                         return (
-                            <div key={cat.label} style={{ marginBottom: 30 }}>
-                                <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", color: "#334155", marginBottom: 12, paddingBottom: 8, borderBottom: "1px solid #0a1120" }}>
-                                    {cat.label}
-                                </div>
-                                <div style={{ display: "flex", flexWrap: "wrap", gap: 9 }}>
+                            <div key={cat.label} className="hs-cat">
+                                <div className="hs-cat-label">{cat.label}</div>
+                                <div className="hs-chips">
                                     {visibleHabits.map(habit => {
                                         const sel = selected.has(habit.name);
                                         return (
-                                            <button key={habit.name} className={`hs-chip${sel ? " sel" : ""}`} onClick={() => toggle(habit.name)} title={habit.description}>
+                                            <button
+                                                key={habit.name}
+                                                className={`hs-chip${sel ? " sel" : ""}`}
+                                                onClick={() => toggle(habit.name)}
+                                                title={habit.description}
+                                            >
                                                 <span className="icon">{habit.icon}</span>
                                                 {habit.name}
                                                 {sel && <span style={{ marginLeft: 2, fontSize: 10, fontWeight: 900 }}>✓</span>}
@@ -197,26 +262,34 @@ export default function SelectHabits() {
                 </div>
 
                 {/* Fixed footer */}
-                <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, background: "rgba(4,8,15,0.96)", backdropFilter: "blur(16px)", borderTop: "1px solid #0a1120", padding: "16px 40px", display: "flex", alignItems: "center", justifyContent: "center", gap: 20, zIndex: 20 }}>
-                    {error && <span style={{ fontSize: 13, color: "#f87171", fontWeight: 600 }}>{error}</span>}
+                <div className="hs-footer">
+                    {error && (
+                        <span style={{ fontSize: 13, color: "#f87171", fontWeight: 600, textAlign: "center", width: "100%" }}>{error}</span>
+                    )}
                     {selected.size > 0 && !error && (
                         <span style={{ fontSize: 13, color: "#4ade80", fontWeight: 600 }}>✦ {selected.size} selected</span>
                     )}
-                    <button onClick={handleSave} disabled={saving} style={{
-                        padding: "13px 52px",
-                        background: selected.size > 0 ? "#4ade80" : "#1e293b",
-                        color: selected.size > 0 ? "#04080f" : "#475569",
-                        border: "none", borderRadius: 12,
-                        fontFamily: "'Syne',sans-serif", fontSize: 15, fontWeight: 800,
-                        cursor: saving || selected.size === 0 ? "not-allowed" : "pointer",
-                        transition: "all 0.25s",
-                        boxShadow: selected.size > 0 ? "0 8px 24px rgba(74,222,128,0.25)" : "none",
-                    }}>{saveLabel}</button>
+                    <button
+                        className="hs-save"
+                        onClick={handleSave}
+                        disabled={saving}
+                        style={{
+                            background: selected.size > 0 ? "#4ade80" : "#1e293b",
+                            color:      selected.size > 0 ? "#04080f" : "#475569",
+                            boxShadow:  selected.size > 0 ? "0 8px 24px rgba(74,222,128,0.25)" : "none",
+                        }}
+                    >
+                        {saveLabel}
+                    </button>
                     {mode === "signup" && (
-                        <button onClick={handleSkip} style={{ fontSize: 12, color: "#334155", background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}>Skip for now</button>
+                        <button onClick={() => window.location.href = "/dashboard"} style={{ fontSize: 13, color: "#334155", background: "none", border: "none", cursor: "pointer", padding: "8px 4px" }}>
+                            Skip for now
+                        </button>
                     )}
                     {mode === "add" && (
-                        <button onClick={() => window.location.href = "/dashboard"} style={{ fontSize: 12, color: "#334155", background: "none", border: "none", cursor: "pointer" }}>← Back to Dashboard</button>
+                        <button onClick={() => window.location.href = "/dashboard"} style={{ fontSize: 13, color: "#334155", background: "none", border: "none", cursor: "pointer", padding: "8px 4px" }}>
+                            ← Back
+                        </button>
                     )}
                 </div>
             </div>

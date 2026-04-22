@@ -55,9 +55,11 @@ public class GlobalExceptionHandler {
     }
 
     /** Catch-all 500 */
+
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<Map<String, Object>> handleGeneric(Exception ex) {
-        return err(HttpStatus.INTERNAL_SERVER_ERROR,
-                "Something went wrong: " + ex.getMessage());
+    public ResponseEntity<?> handleException(Exception ex) {
+        return ResponseEntity.status(500).body(
+                Map.of("message", "Something went wrong. Please try again.")
+        );
     }
 }
