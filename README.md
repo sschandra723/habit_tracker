@@ -6,7 +6,8 @@ A full-stack habit tracking application designed to help users build consistency
 
 ## 🚀 Live Demo
 
-🔗 https://habit-tracker-mu-dusky.vercel.app
+🔗 https://habit-tracker-constellation.vercel.app
+
 
 ---
 
